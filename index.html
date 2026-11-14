@@ -1,77 +1,251 @@
+
 <!DOCTYPE html>
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KAMA Football Quiz</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#071b16;color:white;font-family:Arial,sans-serif;text-align:center;padding:25px 16px}
+body{margin:0;padding:18px;background:#071b16;color:white;font-family:Arial,sans-serif;text-align:center}
 h1{color:#35e58a;font-size:27px}
-.card{background:#123329;padding:22px;border-radius:18px;margin:20px auto;max-width:450px}
-button{width:100%;padding:15px;margin:8px 0;border:0;border-radius:12px;background:#24d879;color:#062116;font-size:17px;font-weight:bold}
-button:active{opacity:.8}
-#question{font-size:20px;margin:20px 0}
+.card{max-width:470px;margin:18px auto;background:#123329;padding:20px;border-radius:20px}
+button{width:100%;padding:14px;margin:6px 0;border:0;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer}
+.main{background:#25dc82;color:#062116}
 .answer{background:#245044;color:white}
-#result{font-size:19px;color:#35e58a}
+.answer:disabled{opacity:.65}
+.tab{background:#245044;color:white;width:32%;font-size:13px;padding:11px 4px}
+.tab.active{background:#25dc82;color:#062116}
+#question{font-size:19px;line-height:1.5;margin:22px 0}
+#result{min-height:25px;color:#35e58a}
+.info{color:#b5d7c9;font-size:14px}
+#next,#game,#leaderboard{display:none}
+.timer{font-size:23px;color:#ffd45c;font-weight:bold}
+.player{display:flex;justify-content:space-between;background:#245044;padding:12px;margin:7px 0;border-radius:10px}
 </style>
 </head>
 <body>
+
 <h1>⚽ KAMA FOOTBALL QUIZ</h1>
-<p>Futbol bilimingizni sinab ko‘ring!</p>
-<div class="card">
-<h3 id="progress">1-savol</h3>
-<div id="question">O‘yinni boshlashga tayyormisiz?</div>
-<div id="answers">
-<button onclick="startGame()">▶️ O‘YINNI BOSHLASH</button>
+<p>Futbol bilimdonlari maydoniga xush kelibsiz!</p>
+
+<div class="card" id="home">
+<h2>🏆 Xush kelibsiz!</h2>
+<p class="info">10 ta savol • 3 xil qiyinlik • Reyting</p>
+<button class="main" onclick="startGame()">▶️ O‘YINNI BOSHLASH</button>
+<button onclick="showLeaderboard()">🥇 REYTING</button>
 </div>
+
+<div class="card" id="game">
+<h3 id="progress">1 / 10</h3>
+<p id="level" class="info"></p>
+<div class="timer">⏱ <span id="time">15</span> soniya</div>
+<div id="question"></div>
+<div id="answers"></div>
 <p id="result"></p>
-<p>🏆 Ball: <span id="score">0</span></p>
+<p>🏆 Ball: <b id="score">0</b></p>
+<button id="next" class="main" onclick="nextQuestion()">Keyingi savol ➜</button>
 </div>
+
+<div class="card" id="finish">
+<h2>🏆 O‘yin tugadi!</h2>
+<h1 id="finalScore">0 ball</h1>
+<p id="saveStatus" class="info">Natija saqlanmoqda...</p>
+<button class="main" onclick="startGame()">🔄 QAYTA O‘YNASH</button>
+<button onclick="showLeaderboard()">🥇 REYTINGNI KO‘RISH</button>
+<button onclick="goHome()">Bosh sahifa</button>
+</div>
+
+<div class="card" id="leaderboard">
+<h2>🥇 O‘YINCHILAR REYTINGI</h2>
+<div>
+<button class="tab active" id="allTab" onclick="loadBoard('all')">Global</button>
+<button class="tab" id="dayTab" onclick="loadBoard('day')">Kunlik</button>
+<button class="tab" id="weekTab" onclick="loadBoard('week')">Haftalik</button>
+</div>
+<div id="players" class="info">Yuklanmoqda...</div>
+<button onclick="goHome()">⬅️ Orqaga</button>
+</div>
+
 <script>
-const questions=[
-{q:"2022-yilgi Jahon chempionatida qaysi terma jamoa g‘olib bo‘lgan?",a:["Fransiya","Argentina","Braziliya","Germaniya"],c:1},
-{q:"Lionel Messi qaysi davlat vakili?",a:["Portugaliya","Ispaniya","Argentina","Braziliya"],c:2},
-{q:"Cristiano Ronaldo qaysi davlatdan?",a:["Portugaliya","Argentina","Fransiya","Italiya"],c:0},
-{q:"Real Madrid uy stadioni nomi nima?",a:["Camp Nou","Wembley","Santiago Bernabéu","Old Trafford"],c:2},
-{q:"Futbol jamoasida maydonda nechta o‘yinchi bo‘ladi?",a:["9","10","11","12"],c:2}
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+const bank = [
+{d:"Oson",q:"Futbol jamoasida maydonda nechta o‘yinchi bo‘ladi?",a:["9","10","11","12"],c:2},
+{d:"Oson",q:"2022-yilgi Jahon chempioni qaysi?",a:["Fransiya","Argentina","Braziliya","Germaniya"],c:1},
+{d:"Oson",q:"Cristiano Ronaldo qaysi davlatdan?",a:["Portugaliya","Ispaniya","Italiya","Braziliya"],c:0},
+{d:"Oson",q:"Futbol uchrashuvi odatda necha daqiqa davom etadi?",a:["60","75","90","120"],c:2},
+{d:"Oson",q:"Sariq kartochka nimani bildiradi?",a:["Ogohlantirish","Gol","G‘alaba","O‘yin tugashi"],c:0},
+{d:"Oson",q:"Penalti nuqtasi darvozadan necha metr uzoqda?",a:["9","10","11","12"],c:2},
+{d:"Oson",q:"Darvozabonning asosiy vazifasi nima?",a:["Gol urish","Darvozani himoya qilish","Hakamlik qilish","Aut tashlash"],c:1},
+{d:"Oson",q:"Futbolda xet-trik nima?",a:["2 gol","3 gol","4 gol","5 gol"],c:1},
+{d:"Oson",q:"2024-yilgi Yevropa chempioni qaysi?",a:["Angliya","Fransiya","Ispaniya","Italiya"],c:2},
+{d:"Oson",q:"Qizil kartochka olgan o‘yinchi nima qiladi?",a:["O‘yinni davom ettiradi","Maydonni tark etadi","Darvozaga o‘tadi","Tanaffus qiladi"],c:1},
+
+{d:"O‘rtacha",q:"Real Madrid uy stadioni nomi nima?",a:["Camp Nou","Anfield","Santiago Bernabéu","Wembley"],c:2},
+{d:"O‘rtacha",q:"UEFA Chempionlar Ligasi qaysi qit’a klublari musobaqasi?",a:["Osiyo","Yevropa","Afrika","Janubiy Amerika"],c:1},
+{d:"O‘rtacha",q:"Liverpool klubining stadioni qaysi?",a:["Old Trafford","Anfield","Emirates","Stamford Bridge"],c:1},
+{d:"O‘rtacha",q:"Braziliya Jahon chempionatini necha marta yutgan?",a:["3","4","5","6"],c:2},
+{d:"O‘rtacha",q:"Manchester United qaysi davlat klubi?",a:["Angliya","Italiya","Ispaniya","Germaniya"],c:0},
+{d:"O‘rtacha",q:"Lionel Messi qaysi davlat terma jamoasida o‘ynaydi?",a:["Portugaliya","Argentina","Braziliya","Ispaniya"],c:1},
+{d:"O‘rtacha",q:"2020-yilgi Yevropa chempionati qaysi jamoa g‘alabasi bilan tugagan?",a:["Angliya","Fransiya","Italiya","Germaniya"],c:2},
+{d:"O‘rtacha",q:"Futbolda ofsaydni kim qayd etadi?",a:["Darvozabon","Yon hakam","Murabbiy","Tomoshabin"],c:1},
+{d:"O‘rtacha",q:"2018-yilgi Jahon chempionati g‘olibi kim?",a:["Xorvatiya","Fransiya","Belgiya","Braziliya"],c:1},
+{d:"O‘rtacha",q:"Neymar qaysi davlat futbolchisi?",a:["Argentina","Braziliya","Portugaliya","Urugvay"],c:1},
+
+{d:"Qiyin",q:"Birinchi Jahon chempionati qaysi yili o‘tkazilgan?",a:["1926","1930","1934","1938"],c:1},
+{d:"Qiyin",q:"1930-yilgi Jahon chempionati g‘olibi kim?",a:["Braziliya","Italiya","Urugvay","Argentina"],c:2},
+{d:"Qiyin",q:"1966-yilgi Jahon chempionati qayerda bo‘lgan?",a:["Fransiya","Angliya","Meksika","Germaniya"],c:1},
+{d:"Qiyin",q:"1998-yilgi Jahon chempionati finalida kim g‘olib bo‘lgan?",a:["Braziliya","Fransiya","Italiya","Xorvatiya"],c:1},
+{d:"Qiyin",q:"2010-yilgi Jahon chempionati g‘olibi kim?",a:["Germaniya","Ispaniya","Niderlandiya","Argentina"],c:1},
+{d:"Qiyin",q:"2004-yilgi Yevropa chempionati g‘olibi kim?",a:["Gretsiya","Portugaliya","Chexiya","Daniya"],c:0},
+{d:"Qiyin",q:"2006-yilgi Jahon chempionati finalida Italiya kimni yenggan?",a:["Fransiya","Braziliya","Germaniya","Portugaliya"],c:0},
+{d:"Qiyin",q:"Jahon chempionati tarixidagi ilk turnir qaysi davlatda o‘tgan?",a:["Italiya","Urugvay","Fransiya","Braziliya"],c:1},
+{d:"Qiyin",q:"2014-yilgi Jahon chempionati finalida kim g‘olib bo‘lgan?",a:["Argentina","Germaniya","Braziliya","Niderlandiya"],c:1},
+{d:"Qiyin",q:"Zinedine Zidane 2006-yil finalida qaysi jamoaga qarshi o‘ynagan?",a:["Braziliya","Italiya","Germaniya","Portugaliya"],c:1}
 ];
-let index=0,score=0;
+
+let questions=[],index=0,score=0,timer=null,seconds=15,answered=false;
+
+function hideAll(){
+["home","game","finish","leaderboard"].forEach(id=>{
+document.getElementById(id).style.display="none";
+});
+}
+function goHome(){hideAll();document.getElementById("home").style.display="block";}
+
 function startGame(){
+clearInterval(timer);
+const easy=bank.filter(q=>q.d==="Oson");
+const medium=bank.filter(q=>q.d==="O‘rtacha");
+const hard=bank.filter(q=>q.d==="Qiyin");
+const pick=(arr,n)=>[...arr].sort(()=>Math.random()-.5).slice(0,n);
+questions=[
+...pick(easy,3),
+...pick(medium,4),
+...pick(hard,3)
+].sort(()=>Math.random()-.5);
 index=0;score=0;
 document.getElementById("score").textContent=score;
+hideAll();
+document.getElementById("game").style.display="block";
 showQuestion();
 }
+
 function showQuestion(){
-if(index>=questions.length){
-document.getElementById("question").textContent="O‘yin tugadi!";
-document.getElementById("answers").innerHTML='<button onclick="startGame()">🔄 QAYTA O‘YNASH</button>';
-document.getElementById("progress").textContent="Natija";
-document.getElementById("result").textContent="Siz "+score+" ta to‘g‘ri javob berdingiz!";
-return;
-}
-let q=questions[index];
-document.getElementById("progress").textContent=(index+1)+" / "+questions.length+"-savol";
+answered=false;
+seconds=15;
+document.getElementById("time").textContent=seconds;
+document.getElementById("progress").textContent=(index+1)+" / 10";
+const q=questions[index];
+document.getElementById("level").textContent="Daraja: "+q.d;
 document.getElementById("question").textContent=q.q;
-document.getElementById("answers").innerHTML="";
+document.getElementById("result").textContent="";
+document.getElementById("next").style.display="none";
+const box=document.getElementById("answers");
+box.innerHTML="";
 q.a.forEach((answer,i)=>{
-let b=document.createElement("button");
+const b=document.createElement("button");
 b.className="answer";
 b.textContent=answer;
 b.onclick=()=>checkAnswer(i);
-document.getElementById("answers").appendChild(b);
+box.appendChild(b);
 });
+timer=setInterval(()=>{
+seconds--;
+document.getElementById("time").textContent=seconds;
+if(seconds<=0)checkAnswer(-1);
+},1000);
 }
+
 function checkAnswer(choice){
-if(choice===questions[index].c){
-score++;
-document.getElementById("result").textContent="✅ To‘g‘ri!";
+if(answered)return;
+answered=true;
+clearInterval(timer);
+const q=questions[index];
+const buttons=document.querySelectorAll(".answer");
+buttons.forEach((b,i)=>{
+b.disabled=true;
+if(i===q.c)b.style.background="#168d50";
+else if(i===choice)b.style.background="#a33b3b";
+});
+if(choice===q.c){
+score+=10;
+document.getElementById("result").textContent="✅ To‘g‘ri! +10 ball";
 }else{
-document.getElementById("result").textContent="❌ Noto‘g‘ri!";
+document.getElementById("result").textContent=
+choice===-1?"⏰ Vaqt tugadi!":"❌ Noto‘g‘ri javob!";
 }
 document.getElementById("score").textContent=score;
+document.getElementById("next").style.display="block";
+document.getElementById("next").textContent=
+index===9?"Natijani ko‘rish":"Keyingi savol ➜";
+}
+
+function nextQuestion(){
 index++;
-setTimeout(showQuestion,700);
+if(index>=10){finishGame();return;}
+showQuestion();
+}
+
+async function finishGame(){
+clearInterval(timer);
+hideAll();
+document.getElementById("finish").style.display="block";
+document.getElementById("finalScore").textContent=score+" ball";
+const status=document.getElementById("saveStatus");
+status.textContent="Natija saqlanmoqda...";
+try{
+if(!tg.initData)throw new Error("Telegram ichida oching");
+const response=await fetch("/api/score",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({initData:tg.initData,score:score})
+});
+if(!response.ok)throw new Error("Saqlash amalga oshmadi");
+status.textContent="✅ Natijangiz reytingga saqlandi!";
+}catch(e){
+status.textContent="⚠️ Natijani saqlab bo‘lmadi. Telegram ichida qayta urinib ko‘ring.";
+}
+}
+
+async function showLeaderboard(){
+hideAll();
+document.getElementById("leaderboard").style.display="block";
+await loadBoard("all");
+}
+
+async function loadBoard(period){
+["all","day","week"].forEach(p=>{
+document.getElementById(p+"Tab").classList.toggle("active",p===period);
+});
+const box=document.getElementById("players");
+box.textContent="Yuklanmoqda...";
+try{
+const response=await fetch("/api/leaderboard?period="+period);
+if(!response.ok)throw new Error();
+const data=await response.json();
+box.innerHTML="";
+if(!data.players.length){
+box.textContent="Hozircha reytingda o‘yinchilar yo‘q.";
+return;
+}
+data.players.forEach(p=>{
+const div=document.createElement("div");
+div.className="player";
+const name=document.createElement("span");
+name.textContent=p.rank+". "+p.name;
+const points=document.createElement("b");
+points.textContent=p.score+" ball";
+div.append(name,points);
+box.appendChild(div);
+});
+}catch(e){
+box.textContent="Reytingni yuklab bo‘lmadi.";
+}
 }
 </script>
 </body>
