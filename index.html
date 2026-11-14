@@ -1,1 +1,78 @@
-
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAMA Football Quiz</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#071b16;color:white;font-family:Arial,sans-serif;text-align:center;padding:25px 16px}
+h1{color:#35e58a;font-size:27px}
+.card{background:#123329;padding:22px;border-radius:18px;margin:20px auto;max-width:450px}
+button{width:100%;padding:15px;margin:8px 0;border:0;border-radius:12px;background:#24d879;color:#062116;font-size:17px;font-weight:bold}
+button:active{opacity:.8}
+#question{font-size:20px;margin:20px 0}
+.answer{background:#245044;color:white}
+#result{font-size:19px;color:#35e58a}
+</style>
+</head>
+<body>
+<h1>⚽ KAMA FOOTBALL QUIZ</h1>
+<p>Futbol bilimingizni sinab ko‘ring!</p>
+<div class="card">
+<h3 id="progress">1-savol</h3>
+<div id="question">O‘yinni boshlashga tayyormisiz?</div>
+<div id="answers">
+<button onclick="startGame()">▶️ O‘YINNI BOSHLASH</button>
+</div>
+<p id="result"></p>
+<p>🏆 Ball: <span id="score">0</span></p>
+</div>
+<script>
+const questions=[
+{q:"2022-yilgi Jahon chempionatida qaysi terma jamoa g‘olib bo‘lgan?",a:["Fransiya","Argentina","Braziliya","Germaniya"],c:1},
+{q:"Lionel Messi qaysi davlat vakili?",a:["Portugaliya","Ispaniya","Argentina","Braziliya"],c:2},
+{q:"Cristiano Ronaldo qaysi davlatdan?",a:["Portugaliya","Argentina","Fransiya","Italiya"],c:0},
+{q:"Real Madrid uy stadioni nomi nima?",a:["Camp Nou","Wembley","Santiago Bernabéu","Old Trafford"],c:2},
+{q:"Futbol jamoasida maydonda nechta o‘yinchi bo‘ladi?",a:["9","10","11","12"],c:2}
+];
+let index=0,score=0;
+function startGame(){
+index=0;score=0;
+document.getElementById("score").textContent=score;
+showQuestion();
+}
+function showQuestion(){
+if(index>=questions.length){
+document.getElementById("question").textContent="O‘yin tugadi!";
+document.getElementById("answers").innerHTML='<button onclick="startGame()">🔄 QAYTA O‘YNASH</button>';
+document.getElementById("progress").textContent="Natija";
+document.getElementById("result").textContent="Siz "+score+" ta to‘g‘ri javob berdingiz!";
+return;
+}
+let q=questions[index];
+document.getElementById("progress").textContent=(index+1)+" / "+questions.length+"-savol";
+document.getElementById("question").textContent=q.q;
+document.getElementById("answers").innerHTML="";
+q.a.forEach((answer,i)=>{
+let b=document.createElement("button");
+b.className="answer";
+b.textContent=answer;
+b.onclick=()=>checkAnswer(i);
+document.getElementById("answers").appendChild(b);
+});
+}
+function checkAnswer(choice){
+if(choice===questions[index].c){
+score++;
+document.getElementById("result").textContent="✅ To‘g‘ri!";
+}else{
+document.getElementById("result").textContent="❌ Noto‘g‘ri!";
+}
+document.getElementById("score").textContent=score;
+index++;
+setTimeout(showQuestion,700);
+}
+</script>
+</body>
+</html>
