@@ -86,6 +86,9 @@ def home():
 @app.route("/health")
 def health():
     return jsonify({"status": "KAMA Football Quiz ishlayapti!"})
+    @app.route("/questions.json")
+def get_questions():
+    return send_from_directory(".", "questions.json")
 
 
 @app.route("/api/score", methods=["POST"])
