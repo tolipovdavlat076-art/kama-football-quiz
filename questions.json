@@ -705,5 +705,5 @@
 {"id":748,"difficulty":"hard","type":"text","question":"Futbolda burchak zarbasidan to‘g‘ridan-to‘g‘ri gol urish mumkinmi?","options":["Mumkin","Mumkin emas","Faqat bosh bilan mumkin","Faqat qo‘shimcha vaqtda mumkin"],"answer":0},
 {"id":749,"difficulty":"hard","type":"text","question":"Futbol tarixida «Panenka» uslubidagi penalti zarbasini mashhur qilgan futbolchi kim?","options":["Antonin Panenka","Zinedin Zidan","Andrea Pirlo","Franchesko Totti"],"answer":0},
 {"id":750,"difficulty":"hard","type":"text","question":"«Total futbol» uslubi bilan eng ko‘p bog‘lanadigan terma jamoa qaysi?","options":["Braziliya","Niderlandiya","Italiya","Germaniya"],"answer":1}
-
+]
 
